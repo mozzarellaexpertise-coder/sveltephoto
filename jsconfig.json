@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "checkJs": true,
+    // The one that shuts up the implicit 'any' warnings:
+    "noImplicitAny": false 
+  },
+  // You can also exclude folders like node_modules
+  "exclude": ["node_modules", "**/node_modules"]
+}

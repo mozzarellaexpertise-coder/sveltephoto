@@ -4,11 +4,15 @@
     let message = "";
     let isLoading = false; // Tracks if the upload is currently running
     let uploadError = null; // Holds any error message
+    let publicUrl = "";
 
     // Handles the file input change
     function handleFileChange(event) {
         uploadError = null; // Clear previous errors
-        message = "";       // Clear previous messages
+        message = ""; // Clear previous messages
+        publicUrl = "";    // Clear previous URL
+        
+        // Get the first file from the selected list
         file = event.target.files[0];
     }
 
@@ -23,22 +27,24 @@
         uploadError = null; // Clear old errors
 
         const formData = new FormData();
-        // IMPORTANT: The key MUST match what the server expects (formData.get("file"))
+        // The key must be "file" to match the server-side formData.get("file")
         formData.append("file", file); 
 
         try {
-            // This URL hits the backend route handler we define below
+            // Send the file to the SvelteKit API route
             const res = await fetch("/api/photos", {
                 method: "POST",
-                body: formData
+                body: formData // Sends the file as multipart/form-data
             });
 
             const data = await res.json();
 
             if (res.ok) {
                 // Success!
-                message = `Huzzah! Uploaded! URL: ${data.url}`;
-                // Optional: Reset the file input and clear the file variable
+                message = `Huzzah! Uploaded successfully!`;
+                publicUrl = data.url;
+                
+                // Reset the form after successful upload
                 document.getElementById('file-input').value = ''; 
                 file = null;
             } else {
@@ -54,34 +60,37 @@
     }
 </script>
 
-<main>
+<main style="max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #ccc; border-radius: 8px;">
     <h2>🏞️ Supabase File Uploader</h2>
-    <p>Select a file and hit 'Upload' to send it to your Supabase bucket.</p>
+    <p>Select a file and hit 'Upload' to send it to your Supabase bucket using the secure SvelteKit endpoint.</p>
 
-    <input 
-        type="file" 
-        id="file-input"
-        on:change={handleFileChange} 
-        disabled={isLoading}
-    />
+    <div style="display: flex; flex-direction: column; gap: 15px;">
+        <input 
+            type="file" 
+            id="file-input"
+            on:change={handleFileChange} 
+            disabled={isLoading}
+        />
 
-    <button 
-        on:click={upload} 
-        disabled={isLoading || !file}
-    >
-        {#if isLoading}
-            Saddle Up... Uploading...
-        {:else}
-            Upload Photo ({file ? file.name : 'No file selected'})
-        {/if}
-    </button>
+        <button 
+            on:click={upload} 
+            disabled={isLoading || !file}
+            style="padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;"
+        >
+            {#if isLoading}
+                Saddle Up... Uploading...
+            {:else}
+                Upload Photo ({file ? file.name : 'No file selected'})
+            {/if}
+        </button>
+    </div>
 
-    <hr>
+    <hr style="margin: 20px 0;">
 
     {#if uploadError}
         <p style="color: red; font-weight: bold;">🚨 {uploadError}</p>
     {:else if message}
         <p style="color: green; font-weight: bold;">✅ {message}</p>
-        <p><strong>Path:</strong> <a href="{message.replace('Huzzah! Uploaded! URL: ', '')}" target="_blank">View File</a></p>
+        <p><strong>Path:</strong> <a href="{publicUrl}" target="_blank">{publicUrl}</a></p>
     {/if}
 </main>
